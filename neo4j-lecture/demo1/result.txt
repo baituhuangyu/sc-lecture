@@ -1,0 +1,29 @@
+1  有多少个公司目前是属于 “ST”类型的？
+(1) 先加标签
+match (n:stock) where n.name =~ '.*ST.*' set n:ST return n
+(2) 再查结果
+match (n:ST) return count(n)
+结果 104
+
+2 “600519” 公司的所有独立董事人员中，有多少人同时也担任别的公司的独立董事职位？
+(1) 查看图
+match p=(n:stock {code:'600519'})-[r:executive_stock]-(e:executive)-[r2:executive_stock]-(n2:stock) where r.jobs=~'.*独立董事.*' and r2.jobs=~'.*独立董事.*' return p
+(2) 统计
+match p=(n:stock {code:'600519'})-[r:executive_stock]-(e:executive)-[r2:executive_stock]-(n2:stock) where r.jobs=~'.*独立董事.*' and r2.jobs=~'.*独立董事.*' return count(distinct(e))
+结果 3
+
+3 有多少公司既属于环保行业，又有外资背景？
+(1) match (i:industry {industry:'环保行业'})-[s_i:stock_industry]-(s:stock)-[s_c:stock_concept]-(c:concept {concept:'外资背景'})  return count(distinct(s))
+结果 0
+(2) 检查结果
+match (s:stock)-[s_c:stock_concept]-(c:concept {concept:'外资背景'})  return s
+match (i:industry {industry:'环保行业'})-[s_i:stock_industry]-(s:stock) return s
+检查发现没有相同的公司
+
+4 对于有锂电池概念的所有公司，独立董事中女性人员比例是多少？
+(1) match (e:executive)-[e_s:executive_stock]-(s:stock)-[s_c:stock_concept]-(c:concept {concept:'锂电池'})  with collect(e) as all_e return size(filter(ee IN  all_e where ee.sex='女'))*1.0 / size(all_e)
+ 结果 0.12896174863387977
+
+任务7： 构建人的实体时，需要考虑重名情况，那这个问题具体怎么解决？
+(1) 最好的方式是用身份证或者其他唯一能确定人的方式去关联。
+(2) 在本例中，我用 姓名、年龄、性别3个字段做唯一的，将这3个字段做md5。
